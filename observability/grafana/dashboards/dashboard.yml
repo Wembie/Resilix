@@ -1,0 +1,9 @@
+apiVersion: 1
+
+providers:
+  - name: resilix
+    folder: Resilix
+    type: file
+    disableDeletion: false
+    options:
+      path: /etc/grafana/provisioning/dashboards

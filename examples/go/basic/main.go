@@ -1,0 +1,38 @@
+package main
+
+import (
+	"context"
+	"fmt"
+	"log"
+	"time"
+
+	resilix "github.com/Wembie/Resilix/sdk/go"
+)
+
+func main() {
+	client, err := resilix.New(resilix.DefaultOptions())
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer func() {
+		if closeErr := client.Close(); closeErr != nil {
+			log.Printf("close client: %v", closeErr)
+		}
+	}()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	if err := client.KV().Set(ctx, "resilix:example", "hello", time.Minute); err != nil {
+		log.Printf("set value: %v", err)
+		return
+	}
+
+	value, err := client.KV().Get(ctx, "resilix:example")
+	if err != nil {
+		log.Printf("get value: %v", err)
+		return
+	}
+
+	fmt.Println(value)
+}

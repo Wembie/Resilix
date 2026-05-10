@@ -1,0 +1,45 @@
+version: "2"
+
+run:
+  timeout: 5m
+
+linters:
+  default: standard
+  enable:
+    - bodyclose
+    - copyloopvar
+    - cyclop
+    - dupl
+    - durationcheck
+    - err113
+    - errchkjson
+    - errname
+    - errorlint
+    - gocritic
+    - misspell
+    - noctx
+    - revive
+  settings:
+    cyclop:
+      max-complexity: 18
+    dupl:
+      threshold: 150
+    revive:
+      rules:
+        - name: exported
+          disabled: true
+        - name: package-comments
+          disabled: true
+        - name: redefines-builtin-id
+          disabled: true
+        - name: unused-parameter
+          disabled: true
+  exclusions:
+    rules:
+      - path: _test\.go
+        linters:
+          - err113
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
