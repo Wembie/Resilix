@@ -13,7 +13,11 @@ func BenchmarkSetGet(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	defer client.Close()
+	b.Cleanup(func() {
+		if closeErr := client.Close(); closeErr != nil {
+			b.Errorf("close client: %v", closeErr)
+		}
+	})
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

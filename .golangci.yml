@@ -4,20 +4,31 @@ run:
   timeout: 5m
 
 linters:
-  default: all
-  disable:
-    - depguard
-    - exhaustruct
-    - ireturn
-    - varnamelen
-    - wsl
-    - nlreturn
-    - gomoddirectives
+  default: standard
+  enable:
+    - bodyclose
+    - copyloopvar
+    - cyclop
+    - dupl
+    - durationcheck
+    - err113
+    - errchkjson
+    - errname
+    - errorlint
+    - gocritic
+    - misspell
+    - noctx
+    - revive
   settings:
     cyclop:
       max-complexity: 18
     dupl:
       threshold: 150
+  exclusions:
+    rules:
+      - path: _test\.go
+        linters:
+          - err113
 
 issues:
   max-issues-per-linter: 0

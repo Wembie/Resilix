@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -12,6 +13,8 @@ import (
 	resilix "github.com/Wembie/Resilix/sdk/go"
 	"gopkg.in/yaml.v3"
 )
+
+var ErrUnsupportedConfigExtension = errors.New("resilix/config: unsupported config extension")
 
 type File struct {
 	App           AppConfig           `json:"app" yaml:"app"`
@@ -78,7 +81,7 @@ func Load(path string) (File, error) {
 	case ".json":
 		err = json.Unmarshal(payload, &cfg)
 	default:
-		return File{}, fmt.Errorf("resilix/config: unsupported config extension %s", filepath.Ext(path))
+		return File{}, fmt.Errorf("%w: %s", ErrUnsupportedConfigExtension, filepath.Ext(path))
 	}
 	if err != nil {
 		return File{}, err

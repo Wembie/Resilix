@@ -14,7 +14,11 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer client.Close()
+	defer func() {
+		if closeErr := client.Close(); closeErr != nil {
+			log.Printf("close client: %v", closeErr)
+		}
+	}()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()

@@ -28,7 +28,11 @@ func TestKVAndPipeline(t *testing.T) {
 	if err != nil {
 		t.Fatalf("start redis: %v", err)
 	}
-	defer container.Terminate(ctx)
+	t.Cleanup(func() {
+		if terminateErr := container.Terminate(ctx); terminateErr != nil {
+			t.Errorf("terminate container: %v", terminateErr)
+		}
+	})
 
 	host, err := container.Host(ctx)
 	if err != nil {
@@ -46,7 +50,11 @@ func TestKVAndPipeline(t *testing.T) {
 	if err != nil {
 		t.Fatalf("new client: %v", err)
 	}
-	defer client.Close()
+	t.Cleanup(func() {
+		if closeErr := client.Close(); closeErr != nil {
+			t.Errorf("close client: %v", closeErr)
+		}
+	})
 
 	timeoutCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()

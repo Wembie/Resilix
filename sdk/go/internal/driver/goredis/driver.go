@@ -12,6 +12,11 @@ import (
 	"github.com/Wembie/Resilix/sdk/go/internal/contract"
 )
 
+var (
+	errUnsupportedPipelineCommand = errors.New("resilix: unsupported pipeline command")
+	errMissingPipelineResult      = errors.New("resilix: pipeline command did not produce a result")
+)
+
 type Driver struct {
 	client redis.UniversalClient
 }
@@ -410,7 +415,7 @@ func applyCommand(ctx context.Context, pipe redis.Pipeliner, command contract.Pi
 	case "MSET":
 		pipe.MSet(ctx, command.Values)
 	default:
-		return fmt.Errorf("resilix: unsupported pipeline command %s", command.Name)
+		return fmt.Errorf("%w: %s", errUnsupportedPipelineCommand, command.Name)
 	}
 	return nil
 }
@@ -451,7 +456,7 @@ func toCommandResults(commands []contract.PipelineCommand, executed []redis.Cmde
 			results = append(results, contract.CommandResult{
 				Name: command.Name,
 				Key:  pipelineKey(command),
-				Err:  fmt.Errorf("resilix: command %s did not produce a result", command.Name),
+				Err:  fmt.Errorf("%w: %s", errMissingPipelineResult, command.Name),
 			})
 			continue
 		}

@@ -1,6 +1,7 @@
 package breaker
 
 import (
+	"errors"
 	"testing"
 	"time"
 )
@@ -15,7 +16,7 @@ func TestBreakerOpensAfterThreshold(t *testing.T) {
 	if state := cb.State(); state != StateOpen {
 		t.Fatalf("expected open state, got %s", state)
 	}
-	if err := cb.Allow(); err != ErrOpen {
+	if err := cb.Allow(); !errors.Is(err, ErrOpen) {
 		t.Fatalf("expected open error, got %v", err)
 	}
 }

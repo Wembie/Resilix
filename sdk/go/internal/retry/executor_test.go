@@ -10,6 +10,8 @@ import (
 	"github.com/Wembie/Resilix/sdk/go/internal/breaker"
 )
 
+var errFatal = errors.New("fatal")
+
 func TestExecutorRetriesRetryableErrors(t *testing.T) {
 	t.Parallel()
 
@@ -53,12 +55,11 @@ func TestExecutorStopsOnNonRetryableError(t *testing.T) {
 		breaker.New(breaker.Config{FailureThreshold: 10, OpenTimeout: time.Second, HalfOpenMaxRequests: 1}),
 	)
 
-	expected := errors.New("fatal")
 	_, err := executor.Do(context.Background(), func(context.Context) (any, error) {
 		attempts++
-		return nil, expected
+		return nil, errFatal
 	})
-	if !errors.Is(err, expected) {
+	if !errors.Is(err, errFatal) {
 		t.Fatalf("expected fatal error, got %v", err)
 	}
 	if attempts != 1 {

@@ -14,12 +14,18 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer client.Close()
+	defer func() {
+		if closeErr := client.Close(); closeErr != nil {
+			log.Printf("close client: %v", closeErr)
+		}
+	}()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	_ = client.Stream().CreateGroup(ctx, "resilix:stream", "workers", "$")
+	if err := client.Stream().CreateGroup(ctx, "resilix:stream", "workers", "$"); err != nil {
+		log.Fatal(err)
+	}
 
 	id, err := client.Stream().Add(ctx, "resilix:stream", map[string]any{
 		"event": "created",

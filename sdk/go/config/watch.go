@@ -14,7 +14,9 @@ func Watch(ctx context.Context, path, envPrefix string, overrides map[string]any
 	}
 
 	go func() {
-		defer watcher.Close()
+		defer func() {
+			_ = watcher.Close()
+		}()
 		for {
 			select {
 			case <-ctx.Done():

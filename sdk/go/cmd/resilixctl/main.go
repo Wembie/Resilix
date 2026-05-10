@@ -43,7 +43,11 @@ func main() {
 		fmt.Fprintf(os.Stderr, "client error: %v\n", err)
 		os.Exit(1)
 	}
-	defer client.Close()
+	defer func() {
+		if closeErr := client.Close(); closeErr != nil {
+			fmt.Fprintf(os.Stderr, "close error: %v\n", closeErr)
+		}
+	}()
 
 	ctx, cancel := context.WithTimeout(context.Background(), *timeout)
 	defer cancel()
