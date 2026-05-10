@@ -3,8 +3,8 @@ package config
 import (
 	"context"
 
+	resilix "github.com/Wembie/Resilix/sdk/go"
 	"github.com/fsnotify/fsnotify"
-	resilix "github.com/resilix/resilix/sdk/go"
 )
 
 func Watch(ctx context.Context, path, envPrefix string, overrides map[string]any, onChange func(resilix.Options)) error {

@@ -3,7 +3,7 @@ package resilix
 import (
 	"context"
 
-	internaltelemetry "github.com/resilix/resilix/sdk/go/internal/telemetry"
+	internaltelemetry "github.com/Wembie/Resilix/sdk/go/internal/telemetry"
 )
 
 func WithCorrelationID(ctx context.Context, correlationID string) context.Context {

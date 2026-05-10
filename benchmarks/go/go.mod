@@ -1,8 +1,8 @@
-module github.com/resilix/resilix/benchmarks/go
+module github.com/Wembie/Resilix/benchmarks/go
 
 go 1.24.2
 
-require github.com/resilix/resilix/sdk/go v0.0.0
+require github.com/Wembie/Resilix/sdk/go v0.0.0
 
 require (
 	github.com/beorn7/perks v1.0.1 // indirect
@@ -25,4 +25,4 @@ require (
 	google.golang.org/protobuf v1.36.1 // indirect
 )
 
-replace github.com/resilix/resilix/sdk/go => ../../sdk/go
+replace github.com/Wembie/Resilix/sdk/go => ../../sdk/go

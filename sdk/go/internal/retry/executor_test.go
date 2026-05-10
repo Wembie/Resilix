@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/resilix/resilix/sdk/go/internal/backoff"
-	"github.com/resilix/resilix/sdk/go/internal/breaker"
+	"github.com/Wembie/Resilix/sdk/go/internal/backoff"
+	"github.com/Wembie/Resilix/sdk/go/internal/breaker"
 )
 
 func TestExecutorRetriesRetryableErrors(t *testing.T) {

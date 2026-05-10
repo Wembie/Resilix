@@ -5,12 +5,12 @@ import (
 	"errors"
 	"time"
 
-	"github.com/resilix/resilix/sdk/go/internal/backoff"
-	"github.com/resilix/resilix/sdk/go/internal/breaker"
-	"github.com/resilix/resilix/sdk/go/internal/contract"
-	goredisdriver "github.com/resilix/resilix/sdk/go/internal/driver/goredis"
-	"github.com/resilix/resilix/sdk/go/internal/retry"
-	internaltelemetry "github.com/resilix/resilix/sdk/go/internal/telemetry"
+	"github.com/Wembie/Resilix/sdk/go/internal/backoff"
+	"github.com/Wembie/Resilix/sdk/go/internal/breaker"
+	"github.com/Wembie/Resilix/sdk/go/internal/contract"
+	goredisdriver "github.com/Wembie/Resilix/sdk/go/internal/driver/goredis"
+	"github.com/Wembie/Resilix/sdk/go/internal/retry"
+	internaltelemetry "github.com/Wembie/Resilix/sdk/go/internal/telemetry"
 )
 
 type RedisClient struct {

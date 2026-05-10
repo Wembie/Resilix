@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/resilix/resilix/sdk/go/internal/contract"
+	"github.com/Wembie/Resilix/sdk/go/internal/contract"
 )
 
 var (

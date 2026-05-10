@@ -7,6 +7,16 @@ Current priority:
 - Go SDK: active implementation
 - Python SDK: architectural preparation only
 
+## Install
+
+For Go consumers, the public module path is:
+
+```bash
+go get -v github.com/Wembie/Resilix/sdk/go
+```
+
+Docker is not required to consume the library. The Docker and observability assets in this repository are only for local integration, debugging, and maintainers of Resilix itself.
+
 ## Design Principles
 
 - Clean and hexagonal architecture
@@ -38,10 +48,10 @@ Current priority:
 
 ## Quick Start
 
-1. Start Redis plus observability:
+1. Install the Go SDK:
 
    ```bash
-   make docker-up
+   go get -v github.com/Wembie/Resilix/sdk/go
    ```
 
 2. Run Go tests:
@@ -50,7 +60,13 @@ Current priority:
    make test
    ```
 
-3. Run the CLI health probe:
+3. Optional: start local Redis plus observability for integration work:
+
+   ```bash
+   make docker-up
+   ```
+
+4. Run the CLI health probe:
 
    ```bash
    go run ./sdk/go/cmd/resilixctl --config ./docs/sample-config.yaml
@@ -59,9 +75,9 @@ Current priority:
 ## Repository Standards
 
 - Conventional Commits
-- Semantic Release
+- Per-SDK VERSION files
 - Pre-commit hooks
-- GitHub Actions matrix testing
+- GitHub Actions with separated Go and Python validation
 - Security and dependency scanning
 - Benchmarks and observability assets
 

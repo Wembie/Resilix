@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	resilix "github.com/resilix/resilix/sdk/go"
+	resilix "github.com/Wembie/Resilix/sdk/go"
 	"gopkg.in/yaml.v3"
 )
 

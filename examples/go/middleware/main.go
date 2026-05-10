@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	resilix "github.com/resilix/resilix/sdk/go"
+	resilix "github.com/Wembie/Resilix/sdk/go"
 )
 
 func main() {

@@ -8,17 +8,23 @@ import (
 	"os"
 	"time"
 
-	resilix "github.com/resilix/resilix/sdk/go"
-	"github.com/resilix/resilix/sdk/go/config"
+	resilix "github.com/Wembie/Resilix/sdk/go"
+	"github.com/Wembie/Resilix/sdk/go/config"
 )
 
 func main() {
 	var (
-		configPath = flag.String("config", "", "Path to YAML or JSON configuration")
-		addr       = flag.String("addr", "127.0.0.1:6379", "Redis address override")
-		timeout    = flag.Duration("timeout", 2*time.Second, "Health check timeout")
+		configPath  = flag.String("config", "", "Path to YAML or JSON configuration")
+		addr        = flag.String("addr", "127.0.0.1:6379", "Redis address override")
+		timeout     = flag.Duration("timeout", 2*time.Second, "Health check timeout")
+		showVersion = flag.Bool("version", false, "Print the Resilix Go SDK version")
 	)
 	flag.Parse()
+
+	if *showVersion {
+		fmt.Println(resilix.Version)
+		return
+	}
 
 	options := resilix.DefaultOptions()
 	options.Addrs = []string{*addr}

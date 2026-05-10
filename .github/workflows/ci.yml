@@ -6,7 +6,58 @@ on:
   pull_request:
 
 jobs:
-  go:
+  version-go:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Validate Go version bump
+        run: |
+          python scripts/validate_version_bump.py \
+            --base-ref "${{ github.base_ref }}" \
+            --version-file sdk/go/VERSION \
+            --label go \
+            --watch sdk/go examples/go benchmarks/go tests/go
+
+  version-python:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Validate Python version bump
+        run: |
+          python scripts/validate_version_bump.py \
+            --base-ref "${{ github.base_ref }}" \
+            --version-file sdk/python/VERSION \
+            --label python \
+            --watch sdk/python
+
+  go-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+      - name: Sync workspace
+        run: go work sync
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: v1.64.8
+          args: --config=.golangci.yml ./sdk/go/... ./examples/go/... ./benchmarks/go/... ./tests/go/...
+
+  go-test:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -30,9 +81,20 @@ jobs:
       - name: Integration tests
         run: cd tests/go && go test -tags=integration ./...
 
-  python-layout:
+  python-quality:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Validate placeholder layout
-        run: test -f sdk/python/pyproject.toml
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install Python tooling
+        run: python -m pip install black flake8 mypy ruff
+      - name: Ruff
+        run: python -m ruff check sdk/python/src
+      - name: Black
+        run: python -m black --check sdk/python/src
+      - name: Flake8
+        run: python -m flake8 sdk/python/src
+      - name: Mypy
+        run: python -m mypy sdk/python/src

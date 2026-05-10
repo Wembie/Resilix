@@ -16,3 +16,13 @@ repos:
     rev: v8.24.3
     hooks:
       - id: gitleaks
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.11.10
+    hooks:
+      - id: ruff
+        files: ^sdk/python/src/
+  - repo: https://github.com/psf/black
+    rev: 24.10.0
+    hooks:
+      - id: black
+        files: ^sdk/python/src/

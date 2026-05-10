@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	resilix "github.com/resilix/resilix/sdk/go"
+	resilix "github.com/Wembie/Resilix/sdk/go"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 )

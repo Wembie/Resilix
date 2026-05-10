@@ -31,4 +31,4 @@ The repository includes:
 - `observability/prometheus.yml`
 - `observability/grafana/*`
 
-These are enough for a local telemetry sandbox and can be adapted to Kubernetes later.
+These are optional maintainer assets for a local telemetry sandbox and can be adapted to Kubernetes later. They are not required by applications that simply import the SDK.

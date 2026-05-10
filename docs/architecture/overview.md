@@ -4,7 +4,7 @@
 
 Resilix is a production-grade Redis SDK platform for backend systems that need a consistent contract for resilience, observability, and future multi-language support.
 
-The current implementation focuses on Go first while preparing the repository, contracts, examples, and operational model for a future Python SDK.
+The current implementation focuses on Go first while preparing the repository, contracts, examples, and operational model for a future Python SDK. Consumers install the Go library directly from `github.com/Wembie/Resilix/sdk/go`.
 
 ## Monorepo Architecture
 
@@ -22,7 +22,7 @@ resilix/
 |-- proto/          # future contracts for service/event boundaries
 |-- tests/          # cross-module integration and contract suites
 |-- docker/         # local runtime containers
-`-- observability/  # Prometheus and Grafana provisioning
+`-- observability/  # optional local provisioning for maintainers and integration work
 ```
 
 ## Go SDK Layering

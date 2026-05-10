@@ -4,8 +4,9 @@ GO_MODULE := ./sdk/go
 GO_EXAMPLES := ./examples/go
 GO_TESTS := ./tests/go
 GO_BENCH := ./benchmarks/go
+PYTHON_SDK := ./sdk/python
 
-.PHONY: bootstrap fmt lint test test-unit test-integration race fuzz bench docker-up docker-down docs precommit security
+.PHONY: bootstrap fmt fmt-go lint lint-go lint-python test test-go test-unit test-integration race fuzz bench docker-up docker-down docs precommit security
 
 bootstrap:
 	cd $(GO_MODULE) && go mod tidy
@@ -14,18 +15,33 @@ bootstrap:
 	cd $(GO_BENCH) && go mod tidy
 
 fmt:
+	$(MAKE) fmt-go
+
+fmt-go:
 	cd $(GO_MODULE) && gofmt -w .
 	cd $(GO_EXAMPLES) && gofmt -w .
 	cd $(GO_TESTS) && gofmt -w .
 	cd $(GO_BENCH) && gofmt -w .
 
 lint:
+	$(MAKE) lint-go
+	$(MAKE) lint-python
+
+lint-go:
 	golangci-lint run ./sdk/go/...
 	golangci-lint run ./examples/go/...
 	golangci-lint run ./tests/go/...
 	golangci-lint run ./benchmarks/go/...
 
-test: test-unit test-integration
+lint-python:
+	python -m ruff check $(PYTHON_SDK)/src
+	python -m black --check $(PYTHON_SDK)/src
+	python -m flake8 $(PYTHON_SDK)/src
+	python -m mypy $(PYTHON_SDK)/src
+
+test: test-go
+
+test-go: test-unit test-integration
 
 test-unit:
 	cd $(GO_MODULE) && go test -cover ./...
