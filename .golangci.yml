@@ -1,8 +1,10 @@
+version: "2"
+
 run:
   timeout: 5m
 
 linters:
-  enable-all: true
+  default: all
   disable:
     - depguard
     - exhaustruct
@@ -11,12 +13,11 @@ linters:
     - wsl
     - nlreturn
     - gomoddirectives
-
-linters-settings:
-  cyclop:
-    max-complexity: 18
-  dupl:
-    threshold: 150
+  settings:
+    cyclop:
+      max-complexity: 18
+    dupl:
+      threshold: 150
 
 issues:
   max-issues-per-linter: 0
