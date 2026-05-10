@@ -116,7 +116,6 @@ func (o *Options) Normalize() error {
 	return nil
 }
 
-
 func (o *Options) applyCoreDefaults(defaults Options) {
 	if o.Name == "" {
 		o.Name = defaults.Name
