@@ -105,7 +105,19 @@ func DefaultOptions() Options {
 
 func (o *Options) Normalize() error {
 	defaults := DefaultOptions()
+	o.applyCoreDefaults(defaults)
+	o.applyObservabilityDefaults(defaults)
+	o.applyRetryDefaults(defaults)
+	o.applyCircuitBreakerDefaults(defaults)
 
+	if err := o.validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+
+func (o *Options) applyCoreDefaults(defaults Options) {
 	if o.Name == "" {
 		o.Name = defaults.Name
 	}
@@ -142,6 +154,9 @@ func (o *Options) Normalize() error {
 	if o.MaxInflight <= 0 {
 		o.MaxInflight = defaults.MaxInflight
 	}
+}
+
+func (o *Options) applyObservabilityDefaults(defaults Options) {
 	if o.Observability.Logger == nil {
 		o.Observability.Logger = defaults.Observability.Logger
 	}
@@ -151,6 +166,9 @@ func (o *Options) Normalize() error {
 	if o.Observability.SlowQueryThreshold <= 0 {
 		o.Observability.SlowQueryThreshold = defaults.Observability.SlowQueryThreshold
 	}
+}
+
+func (o *Options) applyRetryDefaults(defaults Options) {
 	if o.Retry.MaxAttempts <= 0 {
 		o.Retry.MaxAttempts = defaults.Retry.MaxAttempts
 	}
@@ -166,6 +184,9 @@ func (o *Options) Normalize() error {
 	if o.Retry.Jitter < 0 {
 		o.Retry.Jitter = defaults.Retry.Jitter
 	}
+}
+
+func (o *Options) applyCircuitBreakerDefaults(defaults Options) {
 	if o.CircuitBreaker.FailureThreshold <= 0 {
 		o.CircuitBreaker.FailureThreshold = defaults.CircuitBreaker.FailureThreshold
 	}
@@ -175,11 +196,6 @@ func (o *Options) Normalize() error {
 	if o.CircuitBreaker.HalfOpenMaxRequests <= 0 {
 		o.CircuitBreaker.HalfOpenMaxRequests = defaults.CircuitBreaker.HalfOpenMaxRequests
 	}
-
-	if err := o.validate(); err != nil {
-		return err
-	}
-	return nil
 }
 
 func (o Options) validate() error {
