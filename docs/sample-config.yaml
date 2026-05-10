@@ -1,0 +1,34 @@
+app:
+  name: resilix-go
+
+redis:
+  mode: standalone
+  addrs:
+    - 127.0.0.1:6379
+  db: 0
+  dial_timeout: 2s
+  read_timeout: 500ms
+  write_timeout: 500ms
+  pool_size: 64
+  min_idle_conns: 8
+  max_conn_age: 10m
+  pool_timeout: 1s
+  conn_max_idle_time: 5m
+
+retry:
+  max_attempts: 3
+  base_delay: 25ms
+  max_delay: 750ms
+  multiplier: 2
+  jitter: 0.2
+
+breaker:
+  failure_threshold: 5
+  open_timeout: 5s
+  half_open_max_requests: 1
+
+observability:
+  slow_query_threshold: 150ms
+
+runtime:
+  max_inflight: 1024
