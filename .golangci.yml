@@ -24,6 +24,16 @@ linters:
       max-complexity: 18
     dupl:
       threshold: 150
+    revive:
+      rules:
+        - name: exported
+          disabled: true
+        - name: package-comments
+          disabled: true
+        - name: redefines-builtin-id
+          disabled: true
+        - name: unused-parameter
+          disabled: true
   exclusions:
     rules:
       - path: _test\.go

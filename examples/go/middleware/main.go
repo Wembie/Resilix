@@ -34,6 +34,7 @@ func main() {
 
 	ctx := context.Background()
 	if err := client.KV().Set(ctx, "resilix:mw", "ok", time.Minute); err != nil {
-		log.Fatal(err)
+		log.Printf("set value: %v", err)
+		return
 	}
 }

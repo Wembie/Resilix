@@ -13,6 +13,10 @@ import (
 )
 
 func main() {
+	os.Exit(run())
+}
+
+func run() int {
 	var (
 		configPath  = flag.String("config", "", "Path to YAML or JSON configuration")
 		addr        = flag.String("addr", "127.0.0.1:6379", "Redis address override")
@@ -23,7 +27,7 @@ func main() {
 
 	if *showVersion {
 		fmt.Println(resilix.Version)
-		return
+		return 0
 	}
 
 	options := resilix.DefaultOptions()
@@ -33,7 +37,7 @@ func main() {
 		loaded, err := config.LoadOptions(*configPath, "RESILIX", nil)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "config error: %v\n", err)
-			os.Exit(1)
+			return 1
 		}
 		options = loaded
 	}
@@ -41,7 +45,7 @@ func main() {
 	client, err := resilix.New(options)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "client error: %v\n", err)
-		os.Exit(1)
+		return 1
 	}
 	defer func() {
 		if closeErr := client.Close(); closeErr != nil {
@@ -61,10 +65,12 @@ func main() {
 	encoder.SetIndent("", "  ")
 	if encodeErr := encoder.Encode(status); encodeErr != nil {
 		fmt.Fprintf(os.Stderr, "encode error: %v\n", encodeErr)
-		os.Exit(1)
+		return 1
 	}
 
 	if err != nil {
-		os.Exit(1)
+		return 1
 	}
+
+	return 0
 }

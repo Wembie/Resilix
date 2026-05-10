@@ -24,7 +24,8 @@ func main() {
 	defer cancel()
 
 	if err := client.Stream().CreateGroup(ctx, "resilix:stream", "workers", "$"); err != nil {
-		log.Fatal(err)
+		log.Printf("create group: %v", err)
+		return
 	}
 
 	id, err := client.Stream().Add(ctx, "resilix:stream", map[string]any{
@@ -32,7 +33,8 @@ func main() {
 		"ts":    time.Now().UTC().Format(time.RFC3339),
 	}, 1000, true)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("add stream entry: %v", err)
+		return
 	}
 
 	messages, err := client.Stream().ReadGroup(ctx, resilix.StreamReadRequest{
@@ -44,7 +46,8 @@ func main() {
 		Block:    time.Second,
 	})
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("read group: %v", err)
+		return
 	}
 
 	fmt.Printf("published=%s entries=%d\n", id, len(messages))

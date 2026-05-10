@@ -24,12 +24,14 @@ func main() {
 	defer cancel()
 
 	if err := client.KV().Set(ctx, "resilix:example", "hello", time.Minute); err != nil {
-		log.Fatal(err)
+		log.Printf("set value: %v", err)
+		return
 	}
 
 	value, err := client.KV().Get(ctx, "resilix:example")
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("get value: %v", err)
+		return
 	}
 
 	fmt.Println(value)
