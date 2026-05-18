@@ -20,6 +20,7 @@ type Config struct {
 	FailureThreshold    int64
 	OpenTimeout         time.Duration
 	HalfOpenMaxRequests int64
+	OnStateChange       func(from, to State)
 }
 
 type Breaker struct {
@@ -29,6 +30,7 @@ type Breaker struct {
 	failures         int64
 	openedAt         time.Time
 	halfOpenRequests int64
+	onStateChange    func(from, to State)
 }
 
 func New(cfg Config) *Breaker {
@@ -43,8 +45,9 @@ func New(cfg Config) *Breaker {
 	}
 
 	return &Breaker{
-		cfg:   cfg,
-		state: StateClosed,
+		cfg:           cfg,
+		state:         StateClosed,
+		onStateChange: cfg.OnStateChange,
 	}
 }
 
@@ -59,6 +62,7 @@ func (b *Breaker) Allow() error {
 		if time.Since(b.openedAt) >= b.cfg.OpenTimeout {
 			b.state = StateHalfOpen
 			b.halfOpenRequests = 0
+			b.notifyStateChange(StateOpen, StateHalfOpen)
 		} else {
 			return ErrOpen
 		}
@@ -80,7 +84,12 @@ func (b *Breaker) RecordSuccess() {
 
 	b.failures = 0
 	b.halfOpenRequests = 0
-	b.state = StateClosed
+	if b.state == StateHalfOpen {
+		b.state = StateClosed
+		b.notifyStateChange(StateHalfOpen, StateClosed)
+	} else {
+		b.state = StateClosed
+	}
 }
 
 func (b *Breaker) RecordFailure() {
@@ -91,6 +100,7 @@ func (b *Breaker) RecordFailure() {
 		b.state = StateOpen
 		b.openedAt = time.Now()
 		b.halfOpenRequests = 0
+		b.notifyStateChange(StateHalfOpen, StateOpen)
 		return
 	}
 
@@ -98,6 +108,13 @@ func (b *Breaker) RecordFailure() {
 	if b.failures >= b.cfg.FailureThreshold {
 		b.state = StateOpen
 		b.openedAt = time.Now()
+		b.notifyStateChange(StateClosed, StateOpen)
+	}
+}
+
+func (b *Breaker) notifyStateChange(from, to State) {
+	if b.onStateChange != nil {
+		go b.onStateChange(from, to)
 	}
 }
 

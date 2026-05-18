@@ -26,6 +26,7 @@ type RetryPolicy struct {
 	MaxDelay    time.Duration
 	Multiplier  float64
 	Jitter      float64
+	Classifier  func(error) bool
 }
 
 type CircuitBreakerConfig struct {
@@ -67,6 +68,7 @@ type Options struct {
 	Plugins         []Plugin
 	MaxInflight     int
 	RateLimiter     AdmissionController
+	Backend         Backend
 }
 
 func DefaultOptions() Options {
@@ -198,7 +200,7 @@ func (o *Options) applyCircuitBreakerDefaults(defaults Options) {
 }
 
 func (o Options) validate() error {
-	if len(o.Addrs) == 0 {
+	if o.Backend == nil && len(o.Addrs) == 0 {
 		return fmt.Errorf("%w: redis address is required", ErrInvalidConfiguration)
 	}
 	switch o.Mode {
