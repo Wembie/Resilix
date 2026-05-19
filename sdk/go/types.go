@@ -35,6 +35,9 @@ type Client interface {
 	Stream() Stream
 	Script() Script
 	Bulk() Bulk
+	Geo() Geo
+	HyperLogLog() HyperLogLog
+	Bits() BitOps
 	Pipeline(ctx context.Context, fn func(PipelineBuilder)) ([]CommandResult, error)
 	Transaction(ctx context.Context, watchKeys []string, fn func(PipelineBuilder)) ([]CommandResult, error)
 	Scan(ctx context.Context, pattern string, count int64, fn func(string) error) error

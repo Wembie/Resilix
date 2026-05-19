@@ -3,6 +3,7 @@ package resilix
 import (
 	"context"
 	"errors"
+	"sync"
 	"time"
 
 	"github.com/Wembie/Resilix/sdk/go/internal/backoff"
@@ -13,6 +14,8 @@ import (
 	internaltelemetry "github.com/Wembie/Resilix/sdk/go/internal/telemetry"
 )
 
+var ErrClientClosed = errors.New("resilix: client is closed")
+
 type RedisClient struct {
 	backend     contract.Backend
 	executor    *retry.Executor
@@ -21,6 +24,8 @@ type RedisClient struct {
 	middlewares []Middleware
 	admission   AdmissionController
 	breaker     *breaker.Breaker
+	mu          sync.RWMutex
+	closed      bool
 }
 
 func New(options Options) (*RedisClient, error) {
@@ -34,12 +39,6 @@ func New(options Options) (*RedisClient, error) {
 		return nil, err
 	}
 
-	circuitBreaker := breaker.New(breaker.Config{
-		FailureThreshold:    options.CircuitBreaker.FailureThreshold,
-		OpenTimeout:         options.CircuitBreaker.OpenTimeout,
-		HalfOpenMaxRequests: options.CircuitBreaker.HalfOpenMaxRequests,
-	})
-
 	recorder := internaltelemetry.New(
 		options.Name,
 		options.Observability.Logger,
@@ -48,9 +47,19 @@ func New(options Options) (*RedisClient, error) {
 		options.Observability.SlowQueryThreshold,
 	)
 
+	circuitBreaker := breaker.New(breaker.Config{
+		FailureThreshold:    options.CircuitBreaker.FailureThreshold,
+		OpenTimeout:         options.CircuitBreaker.OpenTimeout,
+		HalfOpenMaxRequests: options.CircuitBreaker.HalfOpenMaxRequests,
+		OnStateChange: func(_, to breaker.State) {
+			recorder.RecordBreakerState(string(to))
+		},
+	})
+
 	executor := retry.New(
 		retry.Policy{
 			MaxAttempts: options.Retry.MaxAttempts,
+			Classifier:  options.Retry.Classifier,
 		},
 		backoff.New(options.Retry.BaseDelay, options.Retry.MaxDelay, options.Retry.Multiplier, options.Retry.Jitter),
 		circuitBreaker,
@@ -61,8 +70,15 @@ func New(options Options) (*RedisClient, error) {
 		limiter = newInflightGate(options.MaxInflight)
 	}
 
+	var backend contract.Backend
+	if options.Backend != nil {
+		backend = options.Backend
+	} else {
+		backend = goredisdriver.New(options.universalOptions())
+	}
+
 	return &RedisClient{
-		backend:     goredisdriver.New(options.universalOptions()),
+		backend:     backend,
 		executor:    executor,
 		recorder:    recorder,
 		hooks:       options.Hooks,
@@ -73,6 +89,9 @@ func New(options Options) (*RedisClient, error) {
 }
 
 func (c *RedisClient) Close() error {
+	c.mu.Lock()
+	c.closed = true
+	c.mu.Unlock()
 	return c.backend.Close()
 }
 
@@ -112,6 +131,18 @@ func (c *RedisClient) Bulk() Bulk {
 	return bulkService{client: c}
 }
 
+func (c *RedisClient) Geo() Geo {
+	return geoService{client: c}
+}
+
+func (c *RedisClient) HyperLogLog() HyperLogLog {
+	return hllService{client: c}
+}
+
+func (c *RedisClient) Bits() BitOps {
+	return bitService{client: c}
+}
+
 func (c *RedisClient) Ping(ctx context.Context) error {
 	_, err := c.execute(ctx, Operation{Name: "PING", Kind: "control"}, func(inner context.Context) (any, error) {
 		return nil, c.backend.Ping(inner)
@@ -120,11 +151,14 @@ func (c *RedisClient) Ping(ctx context.Context) error {
 }
 
 func (c *RedisClient) Health(ctx context.Context) (HealthStatus, error) {
+	pool := c.backend.PoolStats()
+	c.recorder.RecordPoolStats(pool.Hits, pool.Misses, pool.Timeouts, pool.TotalConns)
+
 	if err := c.Ping(ctx); err != nil {
 		return HealthStatus{
 			Status:       "degraded",
 			Timestamp:    time.Now().UTC(),
-			Pool:         c.backend.PoolStats(),
+			Pool:         pool,
 			BreakerState: string(c.breaker.State()),
 		}, err
 	}
@@ -132,7 +166,7 @@ func (c *RedisClient) Health(ctx context.Context) (HealthStatus, error) {
 	return HealthStatus{
 		Status:       "ok",
 		Timestamp:    time.Now().UTC(),
-		Pool:         c.backend.PoolStats(),
+		Pool:         pool,
 		BreakerState: string(c.breaker.State()),
 	}, nil
 }
@@ -177,6 +211,13 @@ func (c *RedisClient) Scan(ctx context.Context, pattern string, count int64, fn 
 }
 
 func (c *RedisClient) execute(ctx context.Context, operation Operation, action func(context.Context) (any, error)) (any, error) {
+	c.mu.RLock()
+	if c.closed {
+		c.mu.RUnlock()
+		return nil, ErrClientClosed
+	}
+	defer c.mu.RUnlock()
+
 	terminal := func(current context.Context, op Operation) (any, error) {
 		for _, hook := range c.hooks.BeforeExecute {
 			if err := hook(current, op); err != nil {

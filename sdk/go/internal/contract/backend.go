@@ -59,4 +59,22 @@ type Backend interface {
 	Pipeline(ctx context.Context, commands []PipelineCommand) ([]CommandResult, error)
 	Transaction(ctx context.Context, watchKeys []string, commands []PipelineCommand) ([]CommandResult, error)
 	Scan(ctx context.Context, cursor uint64, pattern string, count int64) ([]string, uint64, error)
+
+	GeoAdd(ctx context.Context, key string, members ...GeoMember) (int64, error)
+	GeoDist(ctx context.Context, key, member1, member2, unit string) (float64, error)
+	GeoPos(ctx context.Context, key string, members ...string) ([]*GeoPosition, error)
+	GeoSearch(ctx context.Context, key string, query GeoSearchQuery) ([]GeoSearchResult, error)
+
+	PFAdd(ctx context.Context, key string, elements ...any) (bool, error)
+	PFCount(ctx context.Context, keys ...string) (int64, error)
+	PFMerge(ctx context.Context, dest string, keys ...string) error
+
+	SetBit(ctx context.Context, key string, offset int64, value int) (int64, error)
+	GetBit(ctx context.Context, key string, offset int64) (int64, error)
+	BitCount(ctx context.Context, key string, start, end int64) (int64, error)
+	BitOp(ctx context.Context, op, destKey string, keys ...string) (int64, error)
+	BitPos(ctx context.Context, key string, bit int, pos ...int64) (int64, error)
+
+	LMPop(ctx context.Context, count int64, direction string, keys ...string) (string, []string, error)
+	ZMPop(ctx context.Context, count int64, order string, keys ...string) (string, []ZMember, error)
 }

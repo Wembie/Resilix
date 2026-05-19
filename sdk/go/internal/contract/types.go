@@ -72,3 +72,39 @@ type PipelineCommand struct {
 	MaxLen       int64
 	Approximate  bool
 }
+
+type GeoMember struct {
+	Longitude float64
+	Latitude  float64
+	Name      string
+}
+
+type GeoPosition struct {
+	Longitude float64
+	Latitude  float64
+}
+
+type GeoSearchQuery struct {
+	FromMember string
+	FromCoord  *GeoPosition
+	ByRadius   float64
+	ByBox      *GeoBox
+	Unit       string
+	Sort       string
+	Count      int64
+	Any        bool
+	WithCoord  bool
+	WithDist   bool
+}
+
+type GeoBox struct {
+	Width  float64
+	Height float64
+}
+
+type GeoSearchResult struct {
+	Name     string
+	Distance float64
+	GeoHash  int64
+	Coord    *GeoPosition
+}

@@ -21,3 +21,4 @@ sdk/go/vendor/
 examples/go/.cache/
 benchmarks/go/.cache/
 tests/go/.cache/
+C*.md

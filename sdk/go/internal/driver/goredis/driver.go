@@ -15,6 +15,8 @@ import (
 var (
 	errUnsupportedPipelineCommand = errors.New("resilix: unsupported pipeline command")
 	errMissingPipelineResult      = errors.New("resilix: pipeline command did not produce a result")
+	errBitOpNOTArgs               = errors.New("resilix: BitOp NOT requires exactly one source key")
+	errUnknownBitOp               = errors.New("resilix: unknown BitOp operation")
 )
 
 type Driver struct {
@@ -352,6 +354,171 @@ func (d *Driver) Transaction(ctx context.Context, watchKeys []string, commands [
 func (d *Driver) Scan(ctx context.Context, cursor uint64, pattern string, count int64) ([]string, uint64, error) {
 	keys, next, err := d.client.Scan(ctx, cursor, pattern, count).Result()
 	return keys, next, normalizeError(err)
+}
+
+func (d *Driver) GeoAdd(ctx context.Context, key string, members ...contract.GeoMember) (int64, error) {
+	args := make([]*redis.GeoLocation, 0, len(members))
+	for _, m := range members {
+		args = append(args, &redis.GeoLocation{
+			Longitude: m.Longitude,
+			Latitude:  m.Latitude,
+			Name:      m.Name,
+		})
+	}
+	value, err := d.client.GeoAdd(ctx, key, args...).Result()
+	return value, normalizeError(err)
+}
+
+func (d *Driver) GeoDist(ctx context.Context, key, member1, member2, unit string) (float64, error) {
+	value, err := d.client.GeoDist(ctx, key, member1, member2, unit).Result()
+	return value, normalizeError(err)
+}
+
+func (d *Driver) GeoPos(ctx context.Context, key string, members ...string) ([]*contract.GeoPosition, error) {
+	positions, err := d.client.GeoPos(ctx, key, members...).Result()
+	if err != nil {
+		return nil, normalizeError(err)
+	}
+	result := make([]*contract.GeoPosition, len(positions))
+	for i, pos := range positions {
+		if pos != nil {
+			result[i] = &contract.GeoPosition{Longitude: pos.Longitude, Latitude: pos.Latitude}
+		}
+	}
+	return result, nil
+}
+
+func (d *Driver) GeoSearch(ctx context.Context, key string, query contract.GeoSearchQuery) ([]contract.GeoSearchResult, error) {
+	args := &redis.GeoSearchQuery{
+		Sort:     query.Sort,
+		Count:    int(query.Count),
+		CountAny: query.Any,
+	}
+	if query.FromMember != "" {
+		args.Member = query.FromMember
+	} else if query.FromCoord != nil {
+		args.Longitude = query.FromCoord.Longitude
+		args.Latitude = query.FromCoord.Latitude
+	}
+	if query.ByBox != nil {
+		args.BoxWidth = query.ByBox.Width
+		args.BoxHeight = query.ByBox.Height
+		args.BoxUnit = query.Unit
+	} else {
+		args.Radius = query.ByRadius
+		args.RadiusUnit = query.Unit
+	}
+
+	locations, err := d.client.GeoSearchLocation(ctx, key, &redis.GeoSearchLocationQuery{
+		GeoSearchQuery: *args,
+		WithCoord:      query.WithCoord,
+		WithDist:       query.WithDist,
+	}).Result()
+	if err != nil {
+		return nil, normalizeError(err)
+	}
+
+	results := make([]contract.GeoSearchResult, 0, len(locations))
+	for _, loc := range locations {
+		r := contract.GeoSearchResult{
+			Name:     loc.Name,
+			Distance: loc.Dist,
+			GeoHash:  loc.GeoHash,
+		}
+		if query.WithCoord {
+			r.Coord = &contract.GeoPosition{Longitude: loc.Longitude, Latitude: loc.Latitude}
+		}
+		results = append(results, r)
+	}
+	return results, nil
+}
+
+func (d *Driver) PFAdd(ctx context.Context, key string, elements ...any) (bool, error) {
+	value, err := d.client.PFAdd(ctx, key, elements...).Result()
+	return value == 1, normalizeError(err)
+}
+
+func (d *Driver) PFCount(ctx context.Context, keys ...string) (int64, error) {
+	value, err := d.client.PFCount(ctx, keys...).Result()
+	return value, normalizeError(err)
+}
+
+func (d *Driver) PFMerge(ctx context.Context, dest string, keys ...string) error {
+	return normalizeError(d.client.PFMerge(ctx, dest, keys...).Err())
+}
+
+func (d *Driver) SetBit(ctx context.Context, key string, offset int64, value int) (int64, error) {
+	v, err := d.client.SetBit(ctx, key, offset, value).Result()
+	return v, normalizeError(err)
+}
+
+func (d *Driver) GetBit(ctx context.Context, key string, offset int64) (int64, error) {
+	value, err := d.client.GetBit(ctx, key, offset).Result()
+	return value, normalizeError(err)
+}
+
+func (d *Driver) BitCount(ctx context.Context, key string, start, end int64) (int64, error) {
+	value, err := d.client.BitCount(ctx, key, &redis.BitCount{Start: start, End: end}).Result()
+	return value, normalizeError(err)
+}
+
+func (d *Driver) BitOp(ctx context.Context, op, destKey string, keys ...string) (int64, error) {
+	var (
+		value int64
+		err   error
+	)
+	switch strings.ToUpper(op) {
+	case "AND":
+		value, err = d.client.BitOpAnd(ctx, destKey, keys...).Result()
+	case "OR":
+		value, err = d.client.BitOpOr(ctx, destKey, keys...).Result()
+	case "XOR":
+		value, err = d.client.BitOpXor(ctx, destKey, keys...).Result()
+	case "NOT":
+		if len(keys) == 0 {
+			return 0, errBitOpNOTArgs
+		}
+		value, err = d.client.BitOpNot(ctx, destKey, keys[0]).Result()
+	default:
+		return 0, fmt.Errorf("%w: %s", errUnknownBitOp, op)
+	}
+	return value, normalizeError(err)
+}
+
+func (d *Driver) BitPos(ctx context.Context, key string, bit int, pos ...int64) (int64, error) {
+	switch len(pos) {
+	case 0:
+		value, err := d.client.BitPos(ctx, key, int64(bit)).Result()
+		return value, normalizeError(err)
+	case 1:
+		value, err := d.client.BitPosSpan(ctx, key, int8(bit), pos[0], -1, "BYTE").Result()
+		return value, normalizeError(err)
+	default:
+		value, err := d.client.BitPosSpan(ctx, key, int8(bit), pos[0], pos[1], "BYTE").Result()
+		return value, normalizeError(err)
+	}
+}
+
+func (d *Driver) LMPop(ctx context.Context, count int64, direction string, keys ...string) (string, []string, error) {
+	key, values, err := d.client.LMPop(ctx, direction, count, keys...).Result()
+	if err != nil {
+		if errors.Is(err, redis.Nil) {
+			return "", nil, nil
+		}
+		return "", nil, normalizeError(err)
+	}
+	return key, values, nil
+}
+
+func (d *Driver) ZMPop(ctx context.Context, count int64, order string, keys ...string) (string, []contract.ZMember, error) {
+	key, zs, err := d.client.ZMPop(ctx, order, count, keys...).Result()
+	if err != nil {
+		if errors.Is(err, redis.Nil) {
+			return "", nil, nil
+		}
+		return "", nil, normalizeError(err)
+	}
+	return key, toContractZMembers(zs), nil
 }
 
 type subscription struct {
