@@ -39,6 +39,7 @@ linters:
       - path: _test\.go
         linters:
           - err113
+          - errcheck
 
 issues:
   max-issues-per-linter: 0

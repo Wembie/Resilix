@@ -15,6 +15,8 @@ import (
 var (
 	errUnsupportedPipelineCommand = errors.New("resilix: unsupported pipeline command")
 	errMissingPipelineResult      = errors.New("resilix: pipeline command did not produce a result")
+	errBitOpNOTArgs               = errors.New("resilix: BitOp NOT requires exactly one source key")
+	errUnknownBitOp               = errors.New("resilix: unknown BitOp operation")
 )
 
 type Driver struct {
@@ -474,11 +476,11 @@ func (d *Driver) BitOp(ctx context.Context, op, destKey string, keys ...string) 
 		value, err = d.client.BitOpXor(ctx, destKey, keys...).Result()
 	case "NOT":
 		if len(keys) == 0 {
-			return 0, errors.New("resilix: BitOp NOT requires exactly one source key")
+			return 0, errBitOpNOTArgs
 		}
 		value, err = d.client.BitOpNot(ctx, destKey, keys[0]).Result()
 	default:
-		return 0, fmt.Errorf("resilix: unknown BitOp operation: %s", op)
+		return 0, fmt.Errorf("%w: %s", errUnknownBitOp, op)
 	}
 	return value, normalizeError(err)
 }

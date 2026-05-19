@@ -4,12 +4,18 @@ package resilixtest
 import (
 	"context"
 	"crypto/sha1"
+	"errors"
 	"fmt"
 	"sort"
 	"sync"
 	"time"
 
 	"github.com/Wembie/Resilix/sdk/go/internal/contract"
+)
+
+var (
+	errNOSCRIPT             = errors.New("resilix: NOSCRIPT")
+	errUnsupportedMockCmd   = errors.New("resilix: unsupported pipeline command in mock")
 )
 
 // MockBackend is a thread-safe, in-memory implementation of contract.Backend.
@@ -318,7 +324,7 @@ func (m *MockBackend) Incr(_ context.Context, key string) (int64, error) {
 	}
 	var n int64
 	if val, ok := m.getKV(key); ok {
-		fmt.Sscanf(val, "%d", &n)
+		_, _ = fmt.Sscanf(val, "%d", &n)
 	}
 	n++
 	m.kv[key] = kvEntry{value: fmt.Sprintf("%d", n)}
@@ -333,7 +339,7 @@ func (m *MockBackend) Decr(_ context.Context, key string) (int64, error) {
 	}
 	var n int64
 	if val, ok := m.getKV(key); ok {
-		fmt.Sscanf(val, "%d", &n)
+		_, _ = fmt.Sscanf(val, "%d", &n)
 	}
 	n--
 	m.kv[key] = kvEntry{value: fmt.Sprintf("%d", n)}
@@ -833,7 +839,7 @@ func (m *MockBackend) EvalSHA(_ context.Context, sha string, _ []string, _ ...an
 	}
 	script, ok := m.scripts[sha]
 	if !ok {
-		return nil, fmt.Errorf("resilix: NOSCRIPT: %s", sha)
+		return nil, fmt.Errorf("%w: %s", errNOSCRIPT, sha)
 	}
 	return script, nil
 }
@@ -898,7 +904,7 @@ func (m *MockBackend) execCommands(ctx context.Context, commands []contract.Pipe
 		case "MSET":
 			result.Err = m.MSet(ctx, cmd.Values)
 		default:
-			result.Err = fmt.Errorf("resilix: unsupported pipeline command in mock: %s", cmd.Name)
+			result.Err = fmt.Errorf("%w: %s", errUnsupportedMockCmd, cmd.Name)
 		}
 		results = append(results, result)
 	}
