@@ -29,7 +29,7 @@ type MockBackend struct {
 
 	pubsub pubsubState
 
-	errors  map[string]error // operation → injected error (consumed on next call)
+	errors  map[string][]error // operation → queue of injected errors (consumed FIFO)
 	calls   map[string]int
 	streamSeq int64
 	closed  bool
@@ -59,7 +59,7 @@ func NewMockBackend() *MockBackend {
 		streams: make(map[string][]contract.StreamEntry),
 		groups:  make(map[string]map[string]int),
 		scripts: make(map[string]string),
-		errors:  make(map[string]error),
+		errors:  make(map[string][]error),
 		calls:   make(map[string]int),
 	}
 	m.pubsub.subs = make(map[string][]*mockSub)
@@ -71,14 +71,14 @@ func NewMockBackend() *MockBackend {
 func (m *MockBackend) InjectError(operation string, err error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.errors[operation] = err
+	m.errors[operation] = append(m.errors[operation], err)
 }
 
 // ClearErrors removes all injected errors.
 func (m *MockBackend) ClearErrors() {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.errors = make(map[string]error)
+	m.errors = make(map[string][]error)
 }
 
 // CallCount returns how many times operation was invoked.
@@ -144,12 +144,13 @@ func (m *MockBackend) AddZSet(key string, members ...contract.ZMember) {
 
 func (m *MockBackend) checkError(op string) error {
 	m.calls[op]++
-	if err, ok := m.errors[op]; ok {
-		delete(m.errors, op)
+	if q := m.errors[op]; len(q) > 0 {
+		err := q[0]
+		m.errors[op] = q[1:]
 		return err
 	}
-	if err, ok := m.errors[""]; ok {
-		return err
+	if q := m.errors[""]; len(q) > 0 {
+		return q[0]
 	}
 	return nil
 }
